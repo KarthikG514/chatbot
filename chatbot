@@ -1,0 +1,199 @@
+# Import necessary libraries
+import tkinter as tk
+from tkinter import Scrollbar, Text, Frame, Entry, Button, END, messagebox, OptionMenu, Menu
+import random
+import datetime
+import pyttsx3  # For text-to-speech
+import speech_recognition as sr  # For voice recognition
+from PIL import Image, ImageTk  # For multimedia support
+import emoji  # For emoji support
+
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+
+# Initialize the speech recognition engine
+recognizer = sr.Recognizer()
+
+# Define responses for the chatbot
+responses = {
+    "greetings": ["Hello!", "Hi there!", "Hey!", "Hi! How can I help you?", "Greetings!"],
+    "how_are_you": ["I'm good, thank you!", "Feeling great, thanks for asking!", "I'm doing well!"],
+    "farewell": ["Goodbye!", "See you later!", "Bye! Have a nice day!", "Take care!"],
+    "name": ["My name is ChatBot.", "You can call me ChatBot.", "I'm ChatBot, nice to meet you!"],
+    "time": ["It's currently {:%H:%M}.".format(datetime.datetime.now()),
+             "The time now is {:%I:%M %p}.".format(datetime.datetime.now())],
+    "weather": ["The weather is nice today.", "It's sunny outside.", "It might rain later."],
+    "facts": ["Did you know? The Eiffel Tower can be 15 cm taller during the summer!",
+              "The longest recorded flight of a chicken is 13 seconds.",
+              "A group of flamingos is called a 'flamboyance'."],
+    "interests": ["What are your interests?", "Tell me something you enjoy doing.", "Do you have any hobbies?"],
+    "day": ["How was your day?", "Did you have a good day?", "How's your day going so far?"],
+    "activity": ["What's your favorite activity?", "Do you have any hobbies you enjoy?", "Tell me about your favorite pastime."],
+    "suggestions": ["How about going for a walk in the park?", 
+                    "You could try cooking a new recipe.",
+                    "Watching a movie might be a good idea.",
+                    "You might enjoy reading a book.",
+                    "Listening to music can be relaxing."],
+    "default": ["I'm sorry, I didn't understand that.", "Could you please repeat that?", "I'm not sure I follow."]
+}
+
+# Function to generate response based on user input
+def generate_response(user_input):
+    # Convert input to lowercase for case-insensitive matching
+    user_input = user_input.lower()
+    
+    # Check if input matches any predefined responses
+    if 'hi' in user_input or 'hello' in user_input:
+        return random.choice(responses["greetings"])
+    elif 'how are you' in user_input:
+        return random.choice(responses["how_are_you"])
+    elif 'bye' in user_input or 'goodbye' in user_input:
+        return random.choice(responses["farewell"])
+    elif 'name' in user_input:
+        return random.choice(responses["name"])
+    elif 'time' in user_input:
+        return random.choice(responses["time"])
+    elif 'weather' in user_input:
+        return random.choice(responses["weather"])
+    elif 'facts' in user_input:
+        return random.choice(responses["facts"])
+    elif 'interests' in user_input:
+        return random.choice(responses["interests"])
+    elif 'day' in user_input:
+        return random.choice(responses["day"])
+    elif 'activity' in user_input:
+        return random.choice(responses["activity"])
+    elif 'suggestions' in user_input:
+        return random.choice(responses["suggestions"])
+    else:
+        return random.choice(responses["default"])
+
+# Function to handle sending user input and displaying responses
+def send_message():
+    user_input = entry.get()
+    if user_input.strip() != "":
+        conversation_text.config(state=tk.NORMAL)
+        conversation_text.insert(tk.END, "You: " + user_input + "\n\n")
+        entry.delete(0, tk.END)
+        response = generate_response(user_input)
+        conversation_text.insert(tk.END, "ChatBot: " + response + "\n\n")
+        conversation_text.see(tk.END)
+        conversation_text.config(state=tk.DISABLED)
+        
+        # Speak the response
+        engine.say(response)
+        engine.runAndWait()
+
+# Function to handle voice recognition
+def recognize_speech():
+    with sr.Microphone() as source:
+        audio = recognizer.listen(source)
+        try:
+            user_input = recognizer.recognize_google(audio)
+            conversation_text.config(state=tk.NORMAL)
+            conversation_text.insert(tk.END, "You (Voice): " + user_input + "\n\n")
+            conversation_text.config(state=tk.DISABLED)
+            response = generate_response(user_input)
+            conversation_text.insert(tk.END, "ChatBot: " + response + "\n\n")
+            conversation_text.see(tk.END)
+            conversation_text.config(state=tk.DISABLED)
+            
+            # Speak the response
+            engine.say(response)
+            engine.runAndWait()
+        except sr.UnknownValueError:
+            messagebox.showwarning("Speech Recognition", "Sorry, I could not understand what you said.")
+        except sr.RequestError:
+            messagebox.showerror("Speech Recognition", "Failed to recognize speech. Please check your internet connection.")
+
+# Function to insert emoji into the entry field
+def insert_emoji(emoji_code):
+    entry.insert(tk.END, emoji_code)
+
+# Function to change the theme
+def change_theme(theme):
+    if theme == "Light":
+        root.config(bg="white")
+        conversation_text.config(bg="white", fg="black")
+        entry.config(bg="white", fg="black")
+    elif theme == "Dark":
+        root.config(bg="black")
+        conversation_text.config(bg="black", fg="white")
+        entry.config(bg="black", fg="white")
+
+# Function to show about dialog
+def show_about():
+    messagebox.showinfo("About ChatBot", "ChatBot is a simple chatbot interface built using Tkinter.\n"
+                                         "It responds to various user inputs with predefined messages.\n"
+                                         "Created by YourName.")
+
+# Function to show help dialog
+def show_help():
+    messagebox.showinfo("Help", "Type your message in the entry field and press 'Send' to chat with the ChatBot.\n"
+                                "You can also click on the microphone button to speak instead of typing.\n"
+                                "Use the theme menu to change the interface theme.\n"
+                                "Emoji buttons allow you to insert emojis into your messages.")
+
+# Main Tkinter window
+root = tk.Tk()
+root.title("ChatBot")
+root.geometry("500x600")
+
+# Conversation display
+conversation_frame = Frame(root)
+conversation_frame.pack(pady=10, padx=10)
+scrollbar = Scrollbar(conversation_frame)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+conversation_text = Text(conversation_frame, wrap="word", yscrollcommand=scrollbar.set, width=50, height=20)
+conversation_text.pack(side=tk.LEFT, fill=tk.BOTH)
+conversation_text.config(state=tk.DISABLED)
+scrollbar.config(command=conversation_text.yview)
+
+# User input
+entry_frame = Frame(root)
+entry_frame.pack(pady=10, padx=10)
+entry = Entry(entry_frame, width=40, font=("Arial", 12))
+entry.pack(side=tk.LEFT)
+entry.bind("<Return>", lambda event: send_message())
+
+# Send button
+send_button = Button(entry_frame, text="Send", width=10, command=send_message)
+send_button.pack(side=tk.LEFT, padx=(10, 0))
+
+# Theme selection
+themes = ["Light", "Dark"]
+theme_var = tk.StringVar(root)
+theme_var.set(themes[0])  # Default theme
+theme_menu = OptionMenu(entry_frame, theme_var, *themes, command=change_theme)
+theme_menu.pack(side=tk.RIGHT, padx=(0, 10))
+
+# Voice recognition button
+voice_button = Button(entry_frame, text="Speak", width=10, command=recognize_speech)
+voice_button.pack(side=tk.RIGHT, padx=(0, 10))
+
+# Emoji buttons
+emoji_frame = Frame(root)
+emoji_frame.pack(pady=10, padx=10)
+emojis = ["😊", "😂", "😍", "👍", "🎉", "❤️", "💡", "🌟"]
+for emoji_code in emojis:
+    emoji_button = Button(emoji_frame, text=emoji_code, font=("Arial", 12), command=lambda e=emoji_code: insert_emoji(e))
+    emoji_button.pack(side=tk.LEFT, padx=5)
+
+# Menu
+menu_bar = Menu(root)
+root.config(menu=menu_bar)
+
+file_menu = Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Exit", command=root.quit)
+
+help_menu = Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Help", menu=help_menu)
+help_menu.add_command(label="About", command=show_about)
+help_menu.add_command(label="Help", command=show_help)
+
+# Focus on entry field
+entry.focus()
+
+root.mainloop()
+
